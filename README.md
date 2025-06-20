@@ -134,3 +134,51 @@ The bot will respond with messages like:
 - Never commit your `.env` file
 - Use app passwords, not your main Bluesky password
 - The `.env` file is already in `.gitignore`
+
+## Deployment to Railway
+
+This bot is ready for deployment to Railway with all necessary configuration files included.
+
+### Deployment Prerequisites
+
+1. **GitHub Repository**: Push your code to GitHub
+2. **Railway Account**: Sign up at [railway.app](https://railway.app)
+3. **Bluesky App Password**: Generate one in Bluesky Settings → App Passwords
+
+### Deployment Steps
+
+1. **Connect to Railway**:
+
+   - Go to [railway.app](https://railway.app) and sign up with GitHub
+   - Click "New Project" → "Deploy from GitHub repo"
+   - Select your `whoblockwho` repository
+
+2. **Configure Environment Variables**:
+   In Railway dashboard, go to your project → **Variables** tab and add:
+
+   ```env
+   BSKY_HANDLE=your-bot-handle.bsky.social
+   BSKY_APP_PASSWORD=your_app_password_here
+   NODE_ENV=production
+   ```
+
+3. **Deploy**:
+
+   - Railway will automatically detect the Dockerfile
+   - The build process will install dependencies and compile TypeScript
+   - Your bot will start automatically
+
+4. **Monitor**:
+   - Check the **Logs** tab in Railway dashboard
+   - Visit the **Metrics** tab to monitor resource usage
+   - Health check endpoint available at: `https://your-app.railway.app/health`
+
+### Deployment Files Included
+
+- **`Dockerfile`**: Optimized container configuration
+- **`.dockerignore`**: Excludes unnecessary files from Docker build
+- **Health Check**: Built-in HTTP server for monitoring at `/health`
+
+### Costs
+
+Railway provides $5/month in free credits, which is typically sufficient for a bot like this.
