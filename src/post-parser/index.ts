@@ -62,10 +62,12 @@ export class PostParser {
         return await this.handleRepost(parentUri);
       }
 
-      // SCENARIO 2: Quote post with blocked content  
+      // SCENARIO 2: Quote post with blocked content
       // When A quote posts B's post and A↔B are blocked, the quoted content shows as blocked
       if (parentUri.includes("app.bsky.feed.post")) {
-        console.log("Detected direct post - checking for blocked quote content");
+        console.log(
+          "Detected direct post - checking for blocked quote content"
+        );
         return await this.handleDirectPost(parentUri);
       }
 
@@ -220,7 +222,9 @@ export class PostParser {
           embedData.record
         ) {
           const embeddedRecord = embedData.record;
-          console.log(`Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`);
+          console.log(
+            `Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`
+          );
 
           // This is a quote post with blocked content!
           if (embeddedRecord.blocked || embeddedRecord.notFound) {
@@ -246,8 +250,14 @@ export class PostParser {
           }
 
           // If we can see the embedded record author, this is a visible quote post
-          if (embeddedRecord.author && !embeddedRecord.blocked && !embeddedRecord.notFound) {
-            console.log(`Quote post with visible content by @${embeddedRecord.author.handle}`);
+          if (
+            embeddedRecord.author &&
+            !embeddedRecord.blocked &&
+            !embeddedRecord.notFound
+          ) {
+            console.log(
+              `Quote post with visible content by @${embeddedRecord.author.handle}`
+            );
             // This quote post is visible, so no blocking issue here
             return null;
           }
@@ -260,14 +270,18 @@ export class PostParser {
           embedData.record.record
         ) {
           const nestedRecord = embedData.record.record;
-          
+
           if (nestedRecord.blocked || nestedRecord.notFound) {
             console.log("Found blocked content in recordWithMedia embed");
-            
+
             if (nestedRecord.uri) {
-              const blockedAuthor = await this.extractAuthorFromUri(nestedRecord.uri);
+              const blockedAuthor = await this.extractAuthorFromUri(
+                nestedRecord.uri
+              );
               if (blockedAuthor) {
-                console.log(`Found blocked author in media quote post: @${blockedAuthor.authorHandle}`);
+                console.log(
+                  `Found blocked author in media quote post: @${blockedAuthor.authorHandle}`
+                );
                 return {
                   original: blockedAuthor,
                   reposter: {
