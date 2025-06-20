@@ -30,7 +30,7 @@ export class WhoblockwhoBot {
       // Initialize modules with authenticated agent
       this.notificationMonitor = new NotificationMonitor(agent, this.config);
       this.postParser = new PostParser(agent);
-      this.postInfoGenerator = new PostInfoGenerator(agent);
+      this.postInfoGenerator = new PostInfoGenerator();
       this.responseSender = new ResponseSender(agent);
 
       // Step 2: Start monitoring mentions
@@ -68,7 +68,7 @@ export class WhoblockwhoBot {
           console.log(`Reposted by @${parsedPostInfo.reposter.handle}`);
         }
 
-        // Step 4: Generate post information with clickable links
+        // Step 4: Generate post information
         const replyText = await this.postInfoGenerator.generatePostInfo(
           parsedPostInfo.original.authorHandle,
           parsedPostInfo.reposter?.handle,

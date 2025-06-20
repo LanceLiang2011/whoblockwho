@@ -1,10 +1,6 @@
-import { AtpAgent } from "@atproto/api";
-
 export class PostInfoGenerator {
-  private agent: AtpAgent;
-
-  constructor(agent: AtpAgent) {
-    this.agent = agent;
+  constructor() {
+    // No agent needed since we're just formatting post information
   }
 
   public async generatePostInfo(
@@ -15,25 +11,19 @@ export class PostInfoGenerator {
     try {
       console.log(`Generating post info for @${originalAuthorHandle}`);
 
-      // Generate appropriate response based on scenario with clickable profile links
-      const originalAuthorLink = `https://bsky.app/profile/${originalAuthorHandle}`;
-      
+      // Generate appropriate response based on scenario
       if (reposterHandle) {
-        const reposterLink = `https://bsky.app/profile/${reposterHandle}`;
-
         if (isReply) {
-          return `The original post is by ${originalAuthorLink} and ${reposterLink} replied to it.`;
+          return `The original post is by @${originalAuthorHandle} and @${reposterHandle} replied to it.`;
         } else {
-          return `The original post is by ${originalAuthorLink} and reposted by ${reposterLink}.`;
+          return `The original post is by @${originalAuthorHandle} and reposted by @${reposterHandle}.`;
         }
       } else {
-        return `The original post is by ${originalAuthorLink}.`;
+        return `The original post is by @${originalAuthorHandle}.`;
       }
     } catch (error) {
       console.error("Error generating post info:", error);
       return "Could not analyze the post relationship.";
     }
   }
-
-
 }

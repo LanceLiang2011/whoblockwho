@@ -2,8 +2,8 @@ import { WhoblockwhoBot } from "./bot";
 import { HealthCheckServer } from "./health-check";
 
 async function main(): Promise<void> {
-  console.log("🤖 Whoblockwho - Bluesky Blocked Post Info Bot");
-  console.log("============================================");
+  console.log("🤖 Whoblockwho - Bluesky Post Info Bot");
+  console.log("=====================================");
 
   const bot = new WhoblockwhoBot();
   const healthServer = new HealthCheckServer(

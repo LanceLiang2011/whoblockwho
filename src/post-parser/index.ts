@@ -71,10 +71,10 @@ export class PostParser {
       const parentUri = reply.parent.uri;
       console.log(`🔍 Checking immediate parent post: ${parentUri}`);
 
-      // CASE 1: Parent is a REPOST
+      // CASE 1: Parent is a REPOST - checking for reposted content
       if (parentUri.includes("app.bsky.feed.repost")) {
         console.log(
-          "📋 CASE 1: Parent is a REPOST - checking for blocked reposted content"
+          "📋 CASE 1: Parent is a REPOST - checking for reposted content"
         );
         return await this.handleRepost(parentUri);
       }
@@ -362,7 +362,7 @@ export class PostParser {
 
       console.log(`📄 Found post by @${post.author.handle}`);
 
-      // Return the author info - we'll let the block-checker determine if there's actually a block
+      // Return the author info - the post-info generator will format the response
       return {
         uri: uri,
         authorHandle: post.author.handle,
@@ -496,7 +496,7 @@ export class PostParser {
       const postRecord = post.record as any;
       if (postRecord && postRecord.reply) {
         console.log(
-          `💬 This post IS A REPLY - checking if replying to blocked content`
+          `💬 This post IS A REPLY - checking if replying to content`
         );
 
         // Check if the root or parent post is blocked
@@ -560,7 +560,7 @@ export class PostParser {
 
         const embedData = post.embed as any;
 
-        // Handle quote posts with blocked content
+        // Handle quote posts with content that might be blocked
         if (
           embedData.$type === "app.bsky.embed.record#view" &&
           embedData.record
@@ -570,7 +570,7 @@ export class PostParser {
             `🔗 Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`
           );
 
-          // This is a quote post with blocked content!
+          // This is a quote post with content that might be blocked!
           if (embeddedRecord.blocked || embeddedRecord.notFound) {
             console.log("✅ Found blocked embedded content in quote post");
 
@@ -616,7 +616,7 @@ export class PostParser {
           const nestedRecord = embedData.record.record;
 
           if (nestedRecord.blocked || nestedRecord.notFound) {
-            console.log("✅ Found blocked content in recordWithMedia embed");
+            console.log("✅ Found content in recordWithMedia embed");
 
             if (nestedRecord.uri) {
               const blockedAuthor = await this.extractAuthorFromUri(
@@ -641,8 +641,8 @@ export class PostParser {
         console.log(`📄 No embed found in post`);
       }
 
-      // If no blocked content found, this might just be a regular post
-      console.log("❌ No blocked content found in direct post");
+      // If no hidden content found, this might just be a regular post
+      console.log("❌ No hidden content found in direct post");
       return null;
     } catch (error) {
       console.error("Error handling direct post:", error);
@@ -675,7 +675,7 @@ export class PostParser {
       const embeddedContent = await this.checkForEmbeddedContent(post);
       if (embeddedContent) {
         console.log(
-          `Found embedded blocked content by @${embeddedContent.authorHandle}`
+          `Found embedded content by @${embeddedContent.authorHandle}`
         );
         return embeddedContent;
       }
@@ -733,14 +733,14 @@ export class PostParser {
         }
       }
 
-      // Check if the post itself shows as having blocked content in the response
+      // Check if the post itself shows as having content in the response
       if (post.embed) {
         const responseEmbed = post.embed;
 
         // Check for blocked record embed
         if (responseEmbed.$type === "app.bsky.embed.record#view") {
           console.log(
-            "Found record embed view, checking for blocked content..."
+            "Found record embed view, checking for content..."
           );
 
           if (responseEmbed.record?.blocked || responseEmbed.record?.notFound) {
@@ -775,7 +775,7 @@ export class PostParser {
           responseEmbed.record
         ) {
           console.log(
-            "Found record with media embed view, checking for blocked content..."
+            "Found record with media embed view, checking for content..."
           );
 
           if (
@@ -890,7 +890,7 @@ export class PostParser {
         `✅ Post is accessible by @${post.author.handle} - not blocked in this context`
       );
 
-      // If we can access the post normally, it's probably not the blocked content we're looking for
+      // If we can access the post normally, it's probably not the hidden content we're looking for
       // unless this is part of a reply chain where the PARENT or ROOT is blocked
       return null;
     } catch (error) {

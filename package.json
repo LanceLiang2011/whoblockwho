@@ -11,11 +11,11 @@
     "bluesky",
     "bot",
     "atproto",
-    "blocking"
+    "post-info"
   ],
   "author": "",
   "license": "ISC",
-  "description": "A Bluesky bot that identifies who blocked whom when posts are hidden",
+  "description": "A Bluesky bot that identifies original authors from reposts and replies",
   "engines": {
     "node": "18.x"
   },
