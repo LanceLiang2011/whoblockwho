@@ -2,7 +2,7 @@ import { ConfigManager } from "./config";
 import { BlueskyAuthenticator } from "./auth";
 import { NotificationMonitor } from "./notifications";
 import { PostParser } from "./post-parser";
-import { BlockRelationshipChecker } from "./block-checker";
+import { PostInfoGenerator } from "./post-info";
 import { ResponseSender } from "./response";
 import { NotificationData } from "./types";
 
@@ -11,7 +11,7 @@ export class WhoblockwhoBot {
   private authenticator: BlueskyAuthenticator;
   private notificationMonitor!: NotificationMonitor;
   private postParser!: PostParser;
-  private blockChecker!: BlockRelationshipChecker;
+  private postInfoGenerator!: PostInfoGenerator;
   private responseSender!: ResponseSender;
 
   constructor() {
@@ -30,7 +30,7 @@ export class WhoblockwhoBot {
       // Initialize modules with authenticated agent
       this.notificationMonitor = new NotificationMonitor(agent, this.config);
       this.postParser = new PostParser(agent);
-      this.blockChecker = new BlockRelationshipChecker(agent);
+      this.postInfoGenerator = new PostInfoGenerator(agent);
       this.responseSender = new ResponseSender(agent);
 
       // Step 2: Start monitoring mentions
@@ -68,11 +68,8 @@ export class WhoblockwhoBot {
           console.log(`Reposted by @${parsedPostInfo.reposter.handle}`);
         }
 
-        // Step 4: Simple analysis - only check if user blocks original author
-        const replyText = await this.blockChecker.analyzeSimpleBlocking(
-          notification.author.did,
-          notification.author.handle,
-          parsedPostInfo.original.authorDid,
+        // Step 4: Generate post information with clickable links
+        const replyText = await this.postInfoGenerator.generatePostInfo(
           parsedPostInfo.original.authorHandle,
           parsedPostInfo.reposter?.handle,
           parsedPostInfo.isReply || false
@@ -96,7 +93,7 @@ export class WhoblockwhoBot {
         console.log("Could not identify original post - sending help message");
 
         // Send a helpful response when we can't identify the original post
-        const helpText = `I couldn't find a post to analyze. Please mention me in a reply to a repost or quote post with blocked content.`;
+        const helpText = `I couldn't find a post to analyze. Please mention me in a reply to a repost or quote post to see the original author.`;
 
         const success = await this.responseSender.sendReply(
           notification.uri,
