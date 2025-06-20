@@ -27,10 +27,14 @@ export class BlockRelationshipChecker {
 
       // Generate simple response
       if (reposterHandle) {
-        const blockText = userBlocksOriginal ? " You have blocked them." : "";
+        const blockText = userBlocksOriginal
+          ? ` You have blocked @${originalAuthorHandle}.`
+          : "";
         return `The original post is by @${originalAuthorHandle} and reposted by @${reposterHandle}.${blockText}`;
       } else {
-        const blockText = userBlocksOriginal ? " You have blocked them." : "";
+        const blockText = userBlocksOriginal
+          ? ` You have blocked @${originalAuthorHandle}.`
+          : "";
         return `The original post is by @${originalAuthorHandle}.${blockText}`;
       }
     } catch (error) {
