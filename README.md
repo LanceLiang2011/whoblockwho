@@ -52,16 +52,16 @@ Once the bot is running, here's how to use it:
 1. **Find a Hidden Post**: Look for reposts that show "[Post unavailable]" in your Bluesky feed
 2. **Mention the Bot**: Reply to that repost and mention `@whoblockthis.bsky.social`
 3. **Get the Answer**: The bot will analyze the blocking relationship and reply with one of:
-   - `🛈 The original post by @alice is hidden **because @alice has blocked you**.`
-   - `🛈 The original post by @alice is hidden **because you have blocked @alice**.`
-   - `🛈 The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
+   - `� The original post by @alice is hidden **because @alice has blocked you**.`
+   - `� The original post by @alice is hidden **because you have blocked @alice**.`
+   - `� The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
 
 ### Example
 
 ```text
 User sees: "John reposted [Post unavailable]"
 User replies: "@whoblockthis.bsky.social why can't I see this?"
-Bot replies: "🛈 The original post by @alice is hidden because @alice has blocked you."
+Bot replies: "� The original post by @alice is hidden because @alice has blocked you."
 ```
 
 ## Project Structure
@@ -116,9 +116,9 @@ The current implementation covers all steps of the bot development:
 
 The bot will respond with messages like:
 
-- `🛈 The original post by @alice is hidden **because @alice has blocked you**.`
-- `🛈 The original post by @alice is hidden **because you have blocked @alice**.`
-- `🛈 The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
+- `� The original post by @alice is hidden **because @alice has blocked you**.`
+- `� The original post by @alice is hidden **because you have blocked @alice**.`
+- `� The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
 
 ## Environment Variables
 

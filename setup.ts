@@ -54,13 +54,13 @@ async function setupGuide() {
     console.log("   3. The bot will analyze and reply with block information");
     console.log("\n💡 The bot will respond with messages like:");
     console.log(
-      '   "🛈 The original post by @alice is hidden because @alice has blocked you."'
+      '   "🚫 The original post by @alice is hidden because @alice has blocked you."'
     );
     console.log(
-      '   "🛈 The original post by @alice is hidden because you have blocked @alice."'
+      '   "🚫 The original post by @alice is hidden because you have blocked @alice."'
     );
     console.log(
-      '   "🛈 The original post by @alice is unavailable, but no direct block between you and @alice was found."'
+      '   "🚫 The original post by @alice is unavailable, but no direct block between you and @alice was found."'
     );
   } catch (error: any) {
     console.error("\n❌ Setup failed:", error.message);

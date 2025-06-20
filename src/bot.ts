@@ -111,7 +111,7 @@ export class WhoblockwhoBot {
         console.log("Could not identify original post - sending help message");
 
         // Send a helpful response when we can't identify the original post
-        const helpText = `🛈 I couldn't find a hidden post to analyze. Please mention me in a reply to a repost that shows "[Post unavailable]" and I'll tell you who blocked whom!`;
+        const helpText = `🚫 I couldn't find a hidden post to analyze. Please mention me in a reply to a repost that shows "[Post unavailable]" and I'll tell you who blocked whom!`;
 
         const success = await this.responseSender.sendReply(
           notification.uri,

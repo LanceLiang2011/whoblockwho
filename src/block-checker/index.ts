@@ -127,24 +127,24 @@ export class BlockRelationshipChecker {
     // Priority 1: Direct viewer-author blocking
     if (viewerAuthorRelation.blockedBy) {
       console.log(`Case: Author blocked viewer`);
-      return `🛈 The original post by @${authorHandle} is hidden **because @${authorHandle} has blocked you**.`;
+      return `🚫 The original post by @${authorHandle} is hidden **because @${authorHandle} has blocked you**.`;
     }
 
     if (viewerAuthorRelation.blocking) {
       console.log(`Case: Viewer blocked author`);
-      return `🛈 The original post by @${authorHandle} is hidden **because you have blocked @${authorHandle}**.`;
+      return `🚫 The original post by @${authorHandle} is hidden **because you have blocked @${authorHandle}**.`;
     }
 
     // Priority 2: Reposter-author blocking (the common cause of "[Post unavailable]")
     if (reposterAuthorRelation && reposterHandle) {
       if (reposterAuthorRelation.blockedBy) {
         console.log(`Case: Author blocked reposter`);
-        return `🛈 The repost by @${reposterHandle} shows "[Post unavailable]" **because @${authorHandle} has blocked @${reposterHandle}**. The original post by @${authorHandle} is hidden from the reposter.`;
+        return `🚫 The repost by @${reposterHandle} shows "[Post unavailable]" **because @${authorHandle} has blocked @${reposterHandle}**. The original post by @${authorHandle} is hidden from the reposter.`;
       }
 
       if (reposterAuthorRelation.blocking) {
         console.log(`Case: Reposter blocked author`);
-        return `🛈 The repost by @${reposterHandle} shows "[Post unavailable]" **because @${reposterHandle} has blocked @${authorHandle}**. The reposter can't see @${authorHandle}'s content.`;
+        return `🚫 The repost by @${reposterHandle} shows "[Post unavailable]" **because @${reposterHandle} has blocked @${authorHandle}**. The reposter can't see @${authorHandle}'s content.`;
       }
     }
 
@@ -152,21 +152,21 @@ export class BlockRelationshipChecker {
     if (viewerReposterRelation && reposterHandle) {
       if (viewerReposterRelation.blockedBy) {
         console.log(`Case: Reposter blocked viewer`);
-        return `🛈 You cannot see this repost **because @${reposterHandle} has blocked you**. The original post is by @${authorHandle}.`;
+        return `🚫 You cannot see this repost **because @${reposterHandle} has blocked you**. The original post is by @${authorHandle}.`;
       }
 
       if (viewerReposterRelation.blocking) {
         console.log(`Case: Viewer blocked reposter`);
-        return `🛈 This repost appears hidden **because you have blocked @${reposterHandle}**. The original post is by @${authorHandle}.`;
+        return `🚫 This repost appears hidden **because you have blocked @${reposterHandle}**. The original post is by @${authorHandle}.`;
       }
     }
 
     // Fallback: No blocking found
     console.log(`Case: No blocking relationships found`);
     if (reposterHandle) {
-      return `🛈 The original post by @${authorHandle} (reposted by @${reposterHandle}) is unavailable, but no blocking relationships were found. It may have been deleted, restricted by a moderation list, or there may be a temporary issue.`;
+      return `🚫 The original post by @${authorHandle} (reposted by @${reposterHandle}) is unavailable, but no blocking relationships were found. It may have been deleted, restricted by a moderation list, or there may be a temporary issue.`;
     } else {
-      return `🛈 The original post by @${authorHandle} is unavailable, but no direct block between you and @${authorHandle} was found. It may have been deleted or hidden by a moderation list.`;
+      return `🚫 The original post by @${authorHandle} is unavailable, but no direct block between you and @${authorHandle} was found. It may have been deleted or hidden by a moderation list.`;
     }
   }
 }
