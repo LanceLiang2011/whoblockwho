@@ -53,15 +53,9 @@ async function setupGuide() {
     );
     console.log("   3. The bot will analyze and reply with post information");
     console.log("\n💡 The bot will respond with messages like:");
-    console.log(
-      '   "The original post is by @alice and reposted by @bob."'
-    );
-    console.log(
-      '   "The original post is by @alice and @bob replied to it."'
-    );
-    console.log(
-      '   "The original post is by @alice."'
-    );
+    console.log('   "The original post is by @alice and reposted by @bob."');
+    console.log('   "The original post is by @alice and @bob replied to it."');
+    console.log('   "The original post is by @alice."');
   } catch (error: any) {
     console.error("\n❌ Setup failed:", error.message);
 

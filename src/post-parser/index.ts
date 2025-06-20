@@ -739,9 +739,7 @@ export class PostParser {
 
         // Check for blocked record embed
         if (responseEmbed.$type === "app.bsky.embed.record#view") {
-          console.log(
-            "Found record embed view, checking for content..."
-          );
+          console.log("Found record embed view, checking for content...");
 
           if (responseEmbed.record?.blocked || responseEmbed.record?.notFound) {
             console.log("Found blocked embed in response");
