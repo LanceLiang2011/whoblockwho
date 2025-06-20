@@ -79,7 +79,9 @@ export class NotificationMonitor {
           !this.processedNotifications.has(notif.uri) // And ones we haven't processed
       );
 
-      console.log(`Found ${unprocessedMentions.length} unprocessed mentions (of ${response.data.notifications.length} total mentions)`);
+      console.log(
+        `Found ${unprocessedMentions.length} unprocessed mentions (of ${response.data.notifications.length} total mentions)`
+      );
 
       for (const notif of unprocessedMentions) {
         try {
@@ -120,7 +122,9 @@ export class NotificationMonitor {
       if (unprocessedMentions.length > 0) {
         try {
           await this.agent.updateSeenNotifications();
-          console.log(`Marked ${unprocessedMentions.length} notifications as read`);
+          console.log(
+            `Marked ${unprocessedMentions.length} notifications as read`
+          );
         } catch (error) {
           console.error("Error marking notifications as read:", error);
         }

@@ -69,29 +69,77 @@ export class PostParser {
     try {
       // Focus on the immediate parent post that the user is replying to
       const parentUri = reply.parent.uri;
-      console.log(`Checking immediate parent post: ${parentUri}`);
+      console.log(`🔍 Checking immediate parent post: ${parentUri}`);
 
-      // SCENARIO 1: Repost with blocked content
-      // When A reposts B's post and A↔B are blocked, the repost shows "[Post unavailable]"
+      // CASE 1: Parent is a REPOST
       if (parentUri.includes("app.bsky.feed.repost")) {
-        console.log("Detected repost - checking for blocked reposted content");
+        console.log(
+          "📋 CASE 1: Parent is a REPOST - checking for blocked reposted content"
+        );
         return await this.handleRepost(parentUri);
       }
 
-      // SCENARIO 2: Quote post with blocked content OR Reply to blocked post
-      // When A quote posts B's post and A↔B are blocked, the quoted content shows as blocked
-      // When B replies to A's post and user blocks A, the user sees B's reply but not A's original
+      // CASE 2: Parent is a DIRECT POST (could be quote post OR reply)
       if (parentUri.includes("app.bsky.feed.post")) {
         console.log(
-          "Detected direct post - checking for blocked quote content or reply to blocked post"
+          "📄 CASE 2: Parent is a DIRECT POST - determining if quote post or reply"
         );
-        return await this.handleDirectPost(parentUri);
+
+        // First, get the post to understand its structure
+        const postInfo = await this.analyzeDirectPost(parentUri);
+        return postInfo;
       }
 
-      console.log(`Unknown URI format: ${parentUri}`);
+      console.log(`❌ Unknown URI format: ${parentUri}`);
       return null;
     } catch (error) {
-      console.error("Error finding original post:", error);
+      console.error("❌ Error finding original post:", error);
+      return null;
+    }
+  }
+
+  private async analyzeDirectPost(
+    postUri: string
+  ): Promise<ParsedPostInfo | null> {
+    try {
+      console.log(`\n--- ANALYZING DIRECT POST: ${postUri} ---`);
+
+      const postsResponse = await this.agent.getPosts({ uris: [postUri] });
+
+      if (!postsResponse.data.posts || postsResponse.data.posts.length === 0) {
+        console.log("❌ Post not found");
+        return null;
+      }
+
+      const post = postsResponse.data.posts[0];
+      const postRecord = post.record as any;
+
+      console.log(`📄 Post by @${post.author.handle}`);
+      console.log(`📄 Has embed: ${!!post.embed}`);
+      console.log(`📄 Is reply: ${!!(postRecord && postRecord.reply)}`);
+
+      // SCENARIO A: Post has EMBED (this is a quote post/repost)
+      if (post.embed) {
+        console.log(
+          `🔗 SCENARIO A: Post has embed - finding original quoted/reposted author`
+        );
+        return await this.findOriginalFromEmbed(post);
+      }
+
+      // SCENARIO B: Post is a REPLY
+      if (postRecord && postRecord.reply) {
+        console.log(
+          `💬 SCENARIO B: Post is a reply - finding original post author being replied to`
+        );
+        return await this.findOriginalFromReply(post, postRecord);
+      }
+
+      console.log(
+        "❌ Post is neither a quote/repost nor a reply - cannot help"
+      );
+      return null;
+    } catch (error) {
+      console.error("❌ Error analyzing direct post:", error);
       return null;
     }
   }
@@ -104,7 +152,7 @@ export class PostParser {
       if (uri.includes("app.bsky.feed.repost")) {
         return await this.handleRepost(uri);
       } else if (uri.includes("app.bsky.feed.post")) {
-        return await this.handleDirectPost(uri);
+        return await this.analyzeDirectPost(uri);
       }
 
       console.log(`Unknown URI format: ${uri}`);
@@ -112,6 +160,219 @@ export class PostParser {
     } catch (error) {
       console.error(`Error processing URI ${uri}:`, error);
       return null;
+    }
+  }
+
+  private async findOriginalFromEmbed(
+    post: any
+  ): Promise<ParsedPostInfo | null> {
+    try {
+      const embedData = post.embed as any;
+      console.log(`🔗 Embed type: ${embedData.$type}`);
+
+      // Handle quote posts with embedded records
+      if (
+        embedData.$type === "app.bsky.embed.record#view" &&
+        embedData.record
+      ) {
+        const embeddedRecord = embedData.record;
+
+        // If embed has URI, get the original author from it
+        if (embeddedRecord.uri) {
+          console.log(`🔗 Found embedded record URI: ${embeddedRecord.uri}`);
+          const originalAuthor = await this.extractAuthorFromUri(
+            embeddedRecord.uri
+          );
+          if (originalAuthor) {
+            console.log(
+              `✅ Found original author: @${originalAuthor.authorHandle}`
+            );
+            return {
+              original: originalAuthor,
+              reposter: {
+                handle: post.author.handle,
+                did: post.author.did,
+              },
+              isReply: false,
+            };
+          }
+        }
+
+        // If embed has author directly visible
+        if (embeddedRecord.author) {
+          console.log(
+            `✅ Found embedded author: @${embeddedRecord.author.handle}`
+          );
+          return {
+            original: {
+              uri: embeddedRecord.uri || "unknown",
+              authorHandle: embeddedRecord.author.handle,
+              authorDid: embeddedRecord.author.did,
+            },
+            reposter: {
+              handle: post.author.handle,
+              did: post.author.did,
+            },
+            isReply: false,
+          };
+        }
+      }
+
+      // Handle other embed types
+      if (
+        embedData.$type === "app.bsky.embed.recordWithMedia#view" &&
+        embedData.record?.record
+      ) {
+        const nestedRecord = embedData.record.record;
+
+        if (nestedRecord.uri) {
+          console.log(`🔗 Found nested record URI: ${nestedRecord.uri}`);
+          const originalAuthor = await this.extractAuthorFromUri(
+            nestedRecord.uri
+          );
+          if (originalAuthor) {
+            console.log(
+              `✅ Found original author in media embed: @${originalAuthor.authorHandle}`
+            );
+            return {
+              original: originalAuthor,
+              reposter: {
+                handle: post.author.handle,
+                did: post.author.did,
+              },
+              isReply: false,
+            };
+          }
+        }
+
+        if (nestedRecord.author) {
+          console.log(`✅ Found nested author: @${nestedRecord.author.handle}`);
+          return {
+            original: {
+              uri: nestedRecord.uri || "unknown",
+              authorHandle: nestedRecord.author.handle,
+              authorDid: nestedRecord.author.did,
+            },
+            reposter: {
+              handle: post.author.handle,
+              did: post.author.did,
+            },
+            isReply: false,
+          };
+        }
+      }
+
+      console.log("❌ Could not find original author in embed");
+      return null;
+    } catch (error) {
+      console.error("❌ Error finding original from embed:", error);
+      return null;
+    }
+  }
+
+  private async findOriginalFromReply(
+    post: any,
+    postRecord: any
+  ): Promise<ParsedPostInfo | null> {
+    try {
+      const rootUri = postRecord.reply.root?.uri;
+      const parentUri = postRecord.reply.parent?.uri;
+
+      console.log(
+        `💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`
+      );
+
+      // Try root first (original post in thread)
+      if (rootUri) {
+        console.log(`💬 Getting original author from root: ${rootUri}`);
+        const originalAuthor = await this.extractAuthorFromUri(rootUri);
+        if (originalAuthor) {
+          console.log(
+            `✅ Found original author from root: @${originalAuthor.authorHandle}`
+          );
+          return {
+            original: originalAuthor,
+            reposter: {
+              handle: post.author.handle,
+              did: post.author.did,
+            },
+            isReply: true,
+          };
+        }
+      }
+
+      // Try parent if different from root
+      if (parentUri && parentUri !== rootUri) {
+        console.log(`� Getting original author from parent: ${parentUri}`);
+        const originalAuthor = await this.extractAuthorFromUri(parentUri);
+        if (originalAuthor) {
+          console.log(
+            `✅ Found original author from parent: @${originalAuthor.authorHandle}`
+          );
+          return {
+            original: originalAuthor,
+            reposter: {
+              handle: post.author.handle,
+              did: post.author.did,
+            },
+            isReply: true,
+          };
+        }
+      }
+
+      console.log("❌ Could not find original author in reply chain");
+      return null;
+    } catch (error) {
+      console.error("❌ Error finding original from reply:", error);
+      return null;
+    }
+  }
+
+  private async detectBlockedAuthorFromUri(
+    uri: string
+  ): Promise<OriginalPostInfo | null> {
+    try {
+      console.log(`🔍 DETECTING BLOCKED AUTHOR FROM URI: ${uri}`);
+
+      // Try to fetch the post
+      const postsResponse = await this.agent.getPosts({ uris: [uri] });
+
+      if (!postsResponse.data.posts || postsResponse.data.posts.length === 0) {
+        console.log(`❌ Post not found: ${uri}`);
+        // If post is not found, try to extract author from URI
+        return await this.extractAuthorFromUri(uri);
+      }
+
+      const post = postsResponse.data.posts[0];
+
+      // Check if the post response indicates it's blocked
+      if ((post as any).blocked || (post as any).notFound) {
+        console.log(`🚫 Post marked as blocked: ${uri}`);
+        return await this.extractAuthorFromUri(uri);
+      }
+
+      // Here's the key insight: If we can fetch the post normally, we need to check
+      // if this author is someone who might be blocked by the user mentioning our bot
+      //
+      // The way to detect this is: the user mentioned our bot in reply to someone's post,
+      // and that person was replying to this post. If the user couldn't see this original
+      // post, they wouldn't know what the reply was about.
+      //
+      // So we assume that if they're asking about it, there might be a blocking relationship.
+
+      console.log(`📄 Found post by @${post.author.handle}`);
+
+      // Return the author info - we'll let the block-checker determine if there's actually a block
+      return {
+        uri: uri,
+        authorHandle: post.author.handle,
+        authorDid: post.author.did,
+      };
+    } catch (error) {
+      console.error(`❌ Error detecting blocked author from URI: ${error}`);
+
+      // If there's an error fetching, it might be because it's blocked
+      return await this.extractAuthorFromUri(uri);
     }
   }
 
