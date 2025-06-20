@@ -1,6 +1,28 @@
 # Whoblockwho - Bluesky Blocked Post Info Bot
 
-A Bluesky bot that identifies who blocked whom when posts are hidden. When users see "[Post unavailable]" due to blocking, they can mention the bot to find out the blocking relationship.
+## How to Use
+
+The bot works for both **reposts** and **quote posts** with blocked content:
+
+### Scenario 1: Blocked Reposts
+
+1. **Find a Blocked Repost**: Look for reposts that show "[Post unavailable]" in your Bluesky feed
+2. **Mention the Bot**: Reply to that repost and mention `@whoblockthis.bsky.social`
+3. **Get the Answer**: The bot identifies who blocked whom in the repost relationship
+
+### Scenario 2: Blocked Quote Posts
+
+1. **Find a Quote Post with Blocked Content**: Look for quote posts where the quoted content shows as blocked/unavailable
+2. **Mention the Bot**: Reply to that quote post and mention `@whoblockthis.bsky.social`
+3. **Get the Answer**: The bot identifies who blocked whom in the quote relationship
+
+### Response Examples
+
+The bot will analyze the blocking relationship and reply with messages like:
+
+- `🛈 The repost by @alice shows "[Post unavailable]" **because @bob has blocked @alice**. The original post by @bob is hidden from the reposter.`
+- `🛈 The original post by @alice is hidden **because @alice has blocked you**.`
+- `🛈 The original post by @alice is hidden **because you have blocked @alice**.`bot that identifies who blocked whom when posts are hidden. When users see "[Post unavailable]" due to blocking, they can mention the bot to find out the blocking relationship.
 
 ## Features
 

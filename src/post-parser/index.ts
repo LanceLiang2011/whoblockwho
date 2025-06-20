@@ -55,13 +55,17 @@ export class PostParser {
       const parentUri = reply.parent.uri;
       console.log(`Checking immediate parent post: ${parentUri}`);
 
-      // Check if this is a repost - if so, we want to find what was reposted
+      // SCENARIO 1: Repost with blocked content
+      // When A reposts B's post and A↔B are blocked, the repost shows "[Post unavailable]"
       if (parentUri.includes("app.bsky.feed.repost")) {
+        console.log("Detected repost - checking for blocked reposted content");
         return await this.handleRepost(parentUri);
       }
 
-      // If it's a direct post, check if it contains blocked embedded content
+      // SCENARIO 2: Quote post with blocked content  
+      // When A quote posts B's post and A↔B are blocked, the quoted content shows as blocked
       if (parentUri.includes("app.bsky.feed.post")) {
+        console.log("Detected direct post - checking for blocked quote content");
         return await this.handleDirectPost(parentUri);
       }
 
@@ -203,20 +207,24 @@ export class PostParser {
       }
 
       const post = postsResponse.data.posts[0];
+      console.log(`Post author: @${post.author.handle}`);
 
-      // Check if this post has immediate embedded blocked content
+      // Check if this post has embedded content (quote post scenario)
       if (post.embed) {
         const embedData = post.embed as any;
+        console.log(`Post has embed of type: ${embedData.$type}`);
 
-        // Look for blocked record embeds
+        // Handle quote posts with blocked content
         if (
           embedData.$type === "app.bsky.embed.record#view" &&
           embedData.record
         ) {
           const embeddedRecord = embedData.record;
+          console.log(`Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`);
 
+          // This is a quote post with blocked content!
           if (embeddedRecord.blocked || embeddedRecord.notFound) {
-            console.log("Found blocked embedded content in direct post");
+            console.log("Found blocked embedded content in quote post");
 
             if (embeddedRecord.uri) {
               const blockedAuthor = await this.extractAuthorFromUri(
@@ -224,11 +232,48 @@ export class PostParser {
               );
               if (blockedAuthor) {
                 console.log(
-                  `Found blocked author in embedded content: @${blockedAuthor.authorHandle}`
+                  `Found blocked author in quote post: @${blockedAuthor.authorHandle}`
                 );
                 return {
                   original: blockedAuthor,
-                  // No reposter for direct posts with embedded blocked content
+                  reposter: {
+                    handle: post.author.handle, // The quote poster
+                    did: post.author.did,
+                  },
+                };
+              }
+            }
+          }
+
+          // If we can see the embedded record author, this is a visible quote post
+          if (embeddedRecord.author && !embeddedRecord.blocked && !embeddedRecord.notFound) {
+            console.log(`Quote post with visible content by @${embeddedRecord.author.handle}`);
+            // This quote post is visible, so no blocking issue here
+            return null;
+          }
+        }
+
+        // Handle other embed types (images with records, etc.)
+        if (
+          embedData.$type === "app.bsky.embed.recordWithMedia#view" &&
+          embedData.record &&
+          embedData.record.record
+        ) {
+          const nestedRecord = embedData.record.record;
+          
+          if (nestedRecord.blocked || nestedRecord.notFound) {
+            console.log("Found blocked content in recordWithMedia embed");
+            
+            if (nestedRecord.uri) {
+              const blockedAuthor = await this.extractAuthorFromUri(nestedRecord.uri);
+              if (blockedAuthor) {
+                console.log(`Found blocked author in media quote post: @${blockedAuthor.authorHandle}`);
+                return {
+                  original: blockedAuthor,
+                  reposter: {
+                    handle: post.author.handle,
+                    did: post.author.did,
+                  },
                 };
               }
             }
