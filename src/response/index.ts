@@ -1,4 +1,4 @@
-import { AtpAgent } from "@atproto/api";
+import { AtpAgent, RichText } from "@atproto/api";
 
 export class ResponseSender {
   private agent: AtpAgent;
@@ -17,7 +17,11 @@ export class ResponseSender {
     try {
       console.log("Sending reply:", replyText);
 
-      // Create proper reply reference
+      // Create RichText object to handle facets for clickable mentions
+      const rt = new RichText({ text: replyText });
+      await rt.detectFacets(this.agent); // Auto-detects @mentions and makes them clickable
+
+      // Create proper reply reference with correct threading
       const replyRef = {
         root: {
           uri: rootUri || mentionPostUri,
@@ -29,9 +33,12 @@ export class ResponseSender {
         },
       };
 
+      // Send the post with rich text facets and reply threading
       const response = await this.agent.post({
-        text: replyText,
+        text: rt.text,
+        facets: rt.facets,
         reply: replyRef,
+        createdAt: new Date().toISOString(),
       });
 
       if (response.uri) {
@@ -51,8 +58,14 @@ export class ResponseSender {
     try {
       console.log("Sending direct post:", text);
 
+      // Create RichText object to handle facets for clickable mentions and links
+      const rt = new RichText({ text });
+      await rt.detectFacets(this.agent);
+
       const response = await this.agent.post({
-        text: text,
+        text: rt.text,
+        facets: rt.facets,
+        createdAt: new Date().toISOString(),
       });
 
       if (response.uri) {

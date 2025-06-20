@@ -77,11 +77,24 @@ export class WhoblockwhoBot {
 
         console.log(`Sending reply: ${replyText}`);
 
-        // Reply to the mention
+        // Determine root URI and CID for proper reply threading
+        let rootUri = notification.uri;
+        let rootCid = notification.cid;
+
+        // If the mention post was itself a reply, use the original thread root
+        const mentionRecord = notification.record as any;
+        if (mentionRecord?.reply?.root) {
+          rootUri = mentionRecord.reply.root.uri;
+          rootCid = mentionRecord.reply.root.cid;
+        }
+
+        // Reply to the mention with proper threading
         const success = await this.responseSender.sendReply(
           notification.uri,
           notification.cid,
-          replyText
+          replyText,
+          rootUri,
+          rootCid
         );
 
         if (success) {
@@ -95,10 +108,23 @@ export class WhoblockwhoBot {
         // Send a helpful response when we can't identify the original post
         const helpText = `I couldn't find a post to analyze. Please mention me in a reply to a repost or quote post to see the original author.`;
 
+        // Determine root URI and CID for proper reply threading
+        let rootUri = notification.uri;
+        let rootCid = notification.cid;
+
+        // If the mention post was itself a reply, use the original thread root
+        const mentionRecord = notification.record as any;
+        if (mentionRecord?.reply?.root) {
+          rootUri = mentionRecord.reply.root.uri;
+          rootCid = mentionRecord.reply.root.cid;
+        }
+
         const success = await this.responseSender.sendReply(
           notification.uri,
           notification.cid,
-          helpText
+          helpText,
+          rootUri,
+          rootCid
         );
 
         if (success) {
