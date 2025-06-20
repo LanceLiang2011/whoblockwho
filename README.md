@@ -175,7 +175,7 @@ This bot is ready for deployment to Railway with all necessary configuration fil
 
 ### Deployment Files Included
 
-- **`Dockerfile`**: Optimized container configuration
+- **`Dockerfile`**: Multi-stage optimized container build (includes TypeScript compilation)
 - **`.dockerignore`**: Excludes unnecessary files from Docker build
 - **Health Check**: Built-in HTTP server for monitoring at `/health`
 
