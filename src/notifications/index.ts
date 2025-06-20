@@ -24,9 +24,19 @@ export class NotificationMonitor {
     console.log(
       `Starting notification monitoring (checking every ${this.config.pollIntervalMs}ms)`
     );
+
+    // On startup, mark existing notifications as read to avoid re-processing old mentions
+    try {
+      console.log("Marking existing notifications as read on startup...");
+      await this.agent.updateSeenNotifications();
+      console.log("✅ Startup: Marked existing notifications as read");
+    } catch (error) {
+      console.error("❌ Error marking startup notifications as read:", error);
+    }
+
     this.isMonitoring = true;
 
-    // Check immediately on start
+    // Check immediately on start (but only new mentions after the startup read)
     await this.checkMentions(onMentionCallback);
 
     // Set up periodic checking
@@ -45,9 +55,8 @@ export class NotificationMonitor {
       this.monitoringInterval = null;
     }
     this.isMonitoring = false;
-    // Clear processed notifications when stopping
-    this.processedNotifications.clear();
-    console.log("Stopped monitoring notifications and cleared processed list");
+    // DON'T clear processed notifications - we want to remember them across restarts
+    console.log("Stopped monitoring notifications");
   }
 
   private async checkMentions(
@@ -61,14 +70,16 @@ export class NotificationMonitor {
         reasons: ["mention"],
       });
 
-      // Filter for mentions we haven't processed yet (regardless of read status)
+      // Filter for mentions we haven't processed yet
+      // Use both read status AND our processed tracking for maximum reliability
       const unprocessedMentions = response.data.notifications.filter(
         (notif: any) =>
           notif.reason === "mention" &&
-          !this.processedNotifications.has(notif.uri)
+          !notif.isRead && // Only process unread notifications
+          !this.processedNotifications.has(notif.uri) // And ones we haven't processed
       );
 
-      console.log(`Found ${unprocessedMentions.length} unprocessed mentions`);
+      console.log(`Found ${unprocessedMentions.length} unprocessed mentions (of ${response.data.notifications.length} total mentions)`);
 
       for (const notif of unprocessedMentions) {
         try {
@@ -105,18 +116,14 @@ export class NotificationMonitor {
         }
       }
 
-      // Only mark notifications as seen if we processed some
-      // This is safer than marking all as read
+      // Mark notifications as seen immediately after processing all mentions
       if (unprocessedMentions.length > 0) {
-        // Mark as seen with a slight delay to ensure processing is complete
-        setTimeout(async () => {
-          try {
-            await this.agent.updateSeenNotifications();
-            console.log("Marked notifications as read");
-          } catch (error) {
-            console.error("Error marking notifications as read:", error);
-          }
-        }, 1000);
+        try {
+          await this.agent.updateSeenNotifications();
+          console.log(`Marked ${unprocessedMentions.length} notifications as read`);
+        } catch (error) {
+          console.error("Error marking notifications as read:", error);
+        }
       }
 
       // Clean up old processed notifications (keep last 1000 to prevent memory issues)
