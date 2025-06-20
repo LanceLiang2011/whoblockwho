@@ -18,18 +18,28 @@ export class PostParser {
     notification: NotificationData
   ): Promise<ParsedPostInfo | null> {
     try {
-      console.log(`\n=== PARSING MENTION FROM @${notification.author.handle} ===`);
+      console.log(
+        `\n=== PARSING MENTION FROM @${notification.author.handle} ===`
+      );
 
       const mentionRecord = notification.record as PostRecord;
-      console.log(`Mention record keys: ${Object.keys(mentionRecord).join(", ")}`);
+      console.log(
+        `Mention record keys: ${Object.keys(mentionRecord).join(", ")}`
+      );
 
       if (!mentionRecord.reply) {
-        console.log("❌ Mention is not a reply, cannot determine original post");
+        console.log(
+          "❌ Mention is not a reply, cannot determine original post"
+        );
         return null;
       }
 
-      console.log(`✅ Mention is a reply. Parent: ${mentionRecord.reply.parent.uri}`);
-      console.log(`✅ Mention is a reply. Root: ${mentionRecord.reply.root.uri}`);
+      console.log(
+        `✅ Mention is a reply. Parent: ${mentionRecord.reply.parent.uri}`
+      );
+      console.log(
+        `✅ Mention is a reply. Root: ${mentionRecord.reply.root.uri}`
+      );
 
       const parsedInfo = await this.findOriginalPost(mentionRecord.reply);
 
@@ -38,7 +48,9 @@ export class PostParser {
           `✅ SUCCESS: Found original post by @${parsedInfo.original.authorHandle}`
         );
         if (parsedInfo.reposter) {
-          console.log(`✅ Processed by @${parsedInfo.reposter.handle} (isReply: ${parsedInfo.isReply})`);
+          console.log(
+            `✅ Processed by @${parsedInfo.reposter.handle} (isReply: ${parsedInfo.isReply})`
+          );
         }
       } else {
         console.log("❌ FAILED: Could not determine original post");
@@ -215,7 +227,9 @@ export class PostParser {
 
       const post = postsResponse.data.posts[0];
       console.log(`📄 Post by @${post.author.handle}`);
-      console.log(`📄 Post record keys: ${Object.keys(post.record || {}).join(", ")}`);
+      console.log(
+        `📄 Post record keys: ${Object.keys(post.record || {}).join(", ")}`
+      );
 
       // FIRST: Check if this post is a reply to a blocked post (most important for our use case)
       const postRecord = post.record as any;
@@ -228,7 +242,9 @@ export class PostParser {
         const rootUri = postRecord.reply.root?.uri;
         const parentUri = postRecord.reply.parent?.uri;
 
-        console.log(`💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`);
+        console.log(
+          `💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`
+        );
 
         // Try to get the root post (original post in thread)
         if (rootUri && rootUri !== parentUri) {
@@ -280,7 +296,7 @@ export class PostParser {
       // SECOND: Check if this post has embedded content (quote post scenario)
       if (post.embed) {
         console.log(`🔗 Post has embed of type: ${(post.embed as any).$type}`);
-        
+
         const embedData = post.embed as any;
 
         // Handle quote posts with blocked content
@@ -593,7 +609,7 @@ export class PostParser {
 
       const post = postsResponse.data.posts[0];
       console.log(`📄 Post found by @${post.author.handle}`);
-      
+
       // Check if the post is marked as blocked or not found
       if ((post as any).blocked || (post as any).notFound) {
         console.log(`🚫 Post is marked as blocked: ${uri}`);
@@ -609,8 +625,10 @@ export class PostParser {
 
       // Additional check: if we can see the post but it's from a user we might have blocked
       // In this case, we need to check if there's a blocking relationship
-      console.log(`✅ Post is accessible by @${post.author.handle} - not blocked in this context`);
-      
+      console.log(
+        `✅ Post is accessible by @${post.author.handle} - not blocked in this context`
+      );
+
       // If we can access the post normally, it's probably not the blocked content we're looking for
       // unless this is part of a reply chain where the PARENT or ROOT is blocked
       return null;
