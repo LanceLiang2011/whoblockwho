@@ -16,6 +16,9 @@
   "author": "",
   "license": "ISC",
   "description": "A Bluesky bot that identifies who blocked whom when posts are hidden",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@atproto/api": "^0.15.16",
     "dotenv": "^16.5.0"
