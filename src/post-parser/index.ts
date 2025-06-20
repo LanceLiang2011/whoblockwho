@@ -18,31 +18,35 @@ export class PostParser {
     notification: NotificationData
   ): Promise<ParsedPostInfo | null> {
     try {
-      console.log(`Parsing mention from @${notification.author.handle}`);
+      console.log(`\n=== PARSING MENTION FROM @${notification.author.handle} ===`);
 
       const mentionRecord = notification.record as PostRecord;
+      console.log(`Mention record keys: ${Object.keys(mentionRecord).join(", ")}`);
 
       if (!mentionRecord.reply) {
-        console.log("Mention is not a reply, cannot determine original post");
+        console.log("❌ Mention is not a reply, cannot determine original post");
         return null;
       }
+
+      console.log(`✅ Mention is a reply. Parent: ${mentionRecord.reply.parent.uri}`);
+      console.log(`✅ Mention is a reply. Root: ${mentionRecord.reply.root.uri}`);
 
       const parsedInfo = await this.findOriginalPost(mentionRecord.reply);
 
       if (parsedInfo) {
         console.log(
-          `Found original post by @${parsedInfo.original.authorHandle}`
+          `✅ SUCCESS: Found original post by @${parsedInfo.original.authorHandle}`
         );
         if (parsedInfo.reposter) {
-          console.log(`Reposted by @${parsedInfo.reposter.handle}`);
+          console.log(`✅ Processed by @${parsedInfo.reposter.handle} (isReply: ${parsedInfo.isReply})`);
         }
       } else {
-        console.log("Could not determine original post");
+        console.log("❌ FAILED: Could not determine original post");
       }
 
       return parsedInfo;
     } catch (error) {
-      console.error("Error parsing original post:", error);
+      console.error("❌ ERROR: Error parsing original post:", error);
       return null;
     }
   }
@@ -200,22 +204,84 @@ export class PostParser {
     postUri: string
   ): Promise<ParsedPostInfo | null> {
     try {
-      console.log(`Fetching direct post: ${postUri}`);
+      console.log(`\n--- HANDLING DIRECT POST: ${postUri} ---`);
 
       const postsResponse = await this.agent.getPosts({ uris: [postUri] });
 
       if (!postsResponse.data.posts || postsResponse.data.posts.length === 0) {
-        console.log("Post not found");
+        console.log("❌ Post not found");
         return null;
       }
 
       const post = postsResponse.data.posts[0];
-      console.log(`Post author: @${post.author.handle}`);
+      console.log(`📄 Post by @${post.author.handle}`);
+      console.log(`📄 Post record keys: ${Object.keys(post.record || {}).join(", ")}`);
 
-      // Check if this post has embedded content (quote post scenario)
+      // FIRST: Check if this post is a reply to a blocked post (most important for our use case)
+      const postRecord = post.record as any;
+      if (postRecord && postRecord.reply) {
+        console.log(
+          `💬 This post IS A REPLY - checking if replying to blocked content`
+        );
+
+        // Check if the root or parent post is blocked
+        const rootUri = postRecord.reply.root?.uri;
+        const parentUri = postRecord.reply.parent?.uri;
+
+        console.log(`💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`);
+
+        // Try to get the root post (original post in thread)
+        if (rootUri && rootUri !== parentUri) {
+          console.log(`🔍 Checking root post for blocking: ${rootUri}`);
+          const blockedRootAuthor = await this.checkIfPostIsBlocked(rootUri);
+          if (blockedRootAuthor) {
+            console.log(
+              `✅ FOUND BLOCKED ROOT AUTHOR: @${blockedRootAuthor.authorHandle}`
+            );
+            return {
+              original: blockedRootAuthor,
+              reposter: {
+                handle: post.author.handle, // B (the replier)
+                did: post.author.did,
+              },
+              isReply: true,
+            };
+          } else {
+            console.log(`❌ Root post is not blocked or not found`);
+          }
+        }
+
+        // Try to get the immediate parent post
+        if (parentUri && parentUri !== postUri) {
+          console.log(`🔍 Checking parent post for blocking: ${parentUri}`);
+          const blockedParentAuthor = await this.checkIfPostIsBlocked(
+            parentUri
+          );
+          if (blockedParentAuthor) {
+            console.log(
+              `✅ FOUND BLOCKED PARENT AUTHOR: @${blockedParentAuthor.authorHandle}`
+            );
+            return {
+              original: blockedParentAuthor,
+              reposter: {
+                handle: post.author.handle, // B (the replier)
+                did: post.author.did,
+              },
+              isReply: true,
+            };
+          } else {
+            console.log(`❌ Parent post is not blocked or not found`);
+          }
+        }
+      } else {
+        console.log(`📄 This post is NOT a reply`);
+      }
+
+      // SECOND: Check if this post has embedded content (quote post scenario)
       if (post.embed) {
+        console.log(`🔗 Post has embed of type: ${(post.embed as any).$type}`);
+        
         const embedData = post.embed as any;
-        console.log(`Post has embed of type: ${embedData.$type}`);
 
         // Handle quote posts with blocked content
         if (
@@ -224,12 +290,12 @@ export class PostParser {
         ) {
           const embeddedRecord = embedData.record;
           console.log(
-            `Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`
+            `🔗 Embedded record - blocked: ${!!embeddedRecord.blocked}, notFound: ${!!embeddedRecord.notFound}`
           );
 
           // This is a quote post with blocked content!
           if (embeddedRecord.blocked || embeddedRecord.notFound) {
-            console.log("Found blocked embedded content in quote post");
+            console.log("✅ Found blocked embedded content in quote post");
 
             if (embeddedRecord.uri) {
               const blockedAuthor = await this.extractAuthorFromUri(
@@ -237,7 +303,7 @@ export class PostParser {
               );
               if (blockedAuthor) {
                 console.log(
-                  `Found blocked author in quote post: @${blockedAuthor.authorHandle}`
+                  `✅ Found blocked author in quote post: @${blockedAuthor.authorHandle}`
                 );
                 return {
                   original: blockedAuthor,
@@ -257,7 +323,7 @@ export class PostParser {
             !embeddedRecord.notFound
           ) {
             console.log(
-              `Quote post with visible content by @${embeddedRecord.author.handle}`
+              `🔗 Quote post with visible content by @${embeddedRecord.author.handle}`
             );
             // This quote post is visible, so no blocking issue here
             return null;
@@ -273,7 +339,7 @@ export class PostParser {
           const nestedRecord = embedData.record.record;
 
           if (nestedRecord.blocked || nestedRecord.notFound) {
-            console.log("Found blocked content in recordWithMedia embed");
+            console.log("✅ Found blocked content in recordWithMedia embed");
 
             if (nestedRecord.uri) {
               const blockedAuthor = await this.extractAuthorFromUri(
@@ -281,7 +347,7 @@ export class PostParser {
               );
               if (blockedAuthor) {
                 console.log(
-                  `Found blocked author in media quote post: @${blockedAuthor.authorHandle}`
+                  `✅ Found blocked author in media quote post: @${blockedAuthor.authorHandle}`
                 );
                 return {
                   original: blockedAuthor,
@@ -294,55 +360,12 @@ export class PostParser {
             }
           }
         }
-      }
-
-      // SCENARIO 3: Reply to blocked post
-      // When B replies to A's post and user blocks A, user sees B's reply but A's original is blocked
-      const postRecord = post.record as any;
-      if (postRecord && postRecord.reply) {
-        console.log("This post is a reply - checking if replying to blocked content");
-        
-        // Check if the root or parent post is blocked
-        const rootUri = postRecord.reply.root?.uri;
-        const parentUri = postRecord.reply.parent?.uri;
-        
-        console.log(`Reply structure - root: ${rootUri}, parent: ${parentUri}`);
-        
-        // Try to get the root post (original post in thread)
-        if (rootUri && rootUri !== parentUri) {
-          const blockedRootAuthor = await this.checkIfPostIsBlocked(rootUri);
-          if (blockedRootAuthor) {
-            console.log(`Found blocked root author: @${blockedRootAuthor.authorHandle}`);
-            return {
-              original: blockedRootAuthor,
-              reposter: {
-                handle: post.author.handle, // B (the replier)
-                did: post.author.did,
-              },
-              isReply: true,
-            };
-          }
-        }
-        
-        // Try to get the immediate parent post
-        if (parentUri && parentUri !== postUri) {
-          const blockedParentAuthor = await this.checkIfPostIsBlocked(parentUri);
-          if (blockedParentAuthor) {
-            console.log(`Found blocked parent author: @${blockedParentAuthor.authorHandle}`);
-            return {
-              original: blockedParentAuthor,
-              reposter: {
-                handle: post.author.handle, // B (the replier)
-                did: post.author.did,
-              },
-              isReply: true,
-            };
-          }
-        }
+      } else {
+        console.log(`📄 No embed found in post`);
       }
 
       // If no blocked content found, this might just be a regular post
-      console.log("No blocked content found in direct post");
+      console.log("❌ No blocked content found in direct post");
       return null;
     } catch (error) {
       console.error("Error handling direct post:", error);
@@ -543,40 +566,67 @@ export class PostParser {
     }
   }
 
-  private async checkIfPostIsBlocked(uri: string): Promise<OriginalPostInfo | null> {
+  private async checkIfPostIsBlocked(
+    uri: string
+  ): Promise<OriginalPostInfo | null> {
     try {
-      console.log(`Checking if post is blocked: ${uri}`);
-      
+      console.log(`🔍 CHECKING IF POST IS BLOCKED: ${uri}`);
+
       // Try to fetch the post
       const postsResponse = await this.agent.getPosts({ uris: [uri] });
-      
+
       if (!postsResponse.data.posts || postsResponse.data.posts.length === 0) {
-        console.log(`Post not found or blocked: ${uri}`);
-        
+        console.log(`❌ Post not found or blocked: ${uri}`);
+
         // Post not found could mean it's blocked, try to extract author from URI
         const authorInfo = await this.extractAuthorFromUri(uri);
         if (authorInfo) {
-          console.log(`Extracted author info from blocked post URI: @${authorInfo.authorHandle}`);
+          console.log(
+            `✅ EXTRACTED AUTHOR FROM BLOCKED POST URI: @${authorInfo.authorHandle}`
+          );
           return authorInfo;
         }
-        
+
+        console.log(`❌ Could not extract author info from URI: ${uri}`);
         return null;
       }
+
+      const post = postsResponse.data.posts[0];
+      console.log(`📄 Post found by @${post.author.handle}`);
       
-      // If we can fetch the post, it's not blocked
-      console.log(`Post is accessible, not blocked: ${uri}`);
+      // Check if the post is marked as blocked or not found
+      if ((post as any).blocked || (post as any).notFound) {
+        console.log(`🚫 Post is marked as blocked: ${uri}`);
+        const authorInfo = await this.extractAuthorFromUri(uri);
+        if (authorInfo) {
+          console.log(
+            `✅ EXTRACTED AUTHOR FROM BLOCKED POST: @${authorInfo.authorHandle}`
+          );
+          return authorInfo;
+        }
+        return null;
+      }
+
+      // Additional check: if we can see the post but it's from a user we might have blocked
+      // In this case, we need to check if there's a blocking relationship
+      console.log(`✅ Post is accessible by @${post.author.handle} - not blocked in this context`);
+      
+      // If we can access the post normally, it's probably not the blocked content we're looking for
+      // unless this is part of a reply chain where the PARENT or ROOT is blocked
       return null;
     } catch (error) {
-      console.error(`Error checking if post is blocked: ${error}`);
-      
+      console.error(`❌ ERROR checking if post is blocked: ${error}`);
+
       // If there's an error fetching, it might be because it's blocked
       // Try to extract author info from the URI
       const authorInfo = await this.extractAuthorFromUri(uri);
       if (authorInfo) {
-        console.log(`Error accessing post, assuming blocked. Extracted author: @${authorInfo.authorHandle}`);
+        console.log(
+          `✅ ERROR ACCESSING POST, ASSUMING BLOCKED. Extracted author: @${authorInfo.authorHandle}`
+        );
         return authorInfo;
       }
-      
+
       return null;
     }
   }

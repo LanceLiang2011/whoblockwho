@@ -27,14 +27,17 @@ The bot works for **reposts**, **quote posts**, and **replies** with blocked con
 The bot will provide clear information about the post relationships:
 
 **Repost scenario:**
+
 - `The original post is by @alice and reposted by @bob. You have blocked @alice.`
 - `The original post is by @alice and reposted by @bob.`
 
 **Reply scenario:**
+
 - `The original post is by @alice and @bob replied to it. You have blocked @alice.`
 - `The original post is by @alice and @bob replied to it.`
 
 **Quote post scenario:**
+
 - `The original post is by @alice. You have blocked @alice.`
 - `The original post is by @alice.`
 

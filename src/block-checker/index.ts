@@ -31,7 +31,7 @@ export class BlockRelationshipChecker {
         const blockText = userBlocksOriginal
           ? ` You have blocked @${originalAuthorHandle}.`
           : "";
-        
+
         if (isReply) {
           return `The original post is by @${originalAuthorHandle} and @${reposterHandle} replied to it.${blockText}`;
         } else {

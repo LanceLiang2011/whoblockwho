@@ -63,8 +63,8 @@ export class NotificationMonitor {
 
       // Filter for mentions we haven't processed yet (regardless of read status)
       const unprocessedMentions = response.data.notifications.filter(
-        (notif: any) => 
-          notif.reason === "mention" && 
+        (notif: any) =>
+          notif.reason === "mention" &&
           !this.processedNotifications.has(notif.uri)
       );
 
@@ -74,7 +74,7 @@ export class NotificationMonitor {
         try {
           // Mark as processed before handling to avoid duplicates
           this.processedNotifications.add(notif.uri);
-          
+
           const notificationData: NotificationData = {
             uri: notif.uri,
             cid: notif.cid,
@@ -89,11 +89,18 @@ export class NotificationMonitor {
             indexedAt: notif.indexedAt,
           };
 
-          console.log(`Processing mention from @${notif.author.handle} (${notif.uri})`);
+          console.log(
+            `Processing mention from @${notif.author.handle} (${notif.uri})`
+          );
           await onMentionCallback(notificationData);
-          console.log(`Successfully processed mention from @${notif.author.handle}`);
+          console.log(
+            `Successfully processed mention from @${notif.author.handle}`
+          );
         } catch (error) {
-          console.error(`Error processing mention from @${notif.author.handle}:`, error);
+          console.error(
+            `Error processing mention from @${notif.author.handle}:`,
+            error
+          );
           // Don't remove from processed set on error - we don't want to retry failed mentions
         }
       }
