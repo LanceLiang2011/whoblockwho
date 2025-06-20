@@ -4,7 +4,7 @@ import { NotificationMonitor } from "./notifications";
 import { PostParser } from "./post-parser";
 import { BlockRelationshipChecker } from "./block-checker";
 import { ResponseSender } from "./response";
-import { NotificationData, ParsedPostInfo, BotActors } from "./types";
+import { NotificationData } from "./types";
 
 export class WhoblockwhoBot {
   private config = ConfigManager.getInstance().getConfig();
@@ -68,30 +68,14 @@ export class WhoblockwhoBot {
           console.log(`Reposted by @${parsedPostInfo.reposter.handle}`);
         }
 
-        // Step 4: Check block relationships
-        const actors: BotActors = {
-          viewer: {
-            did: notification.author.did,
-            handle: notification.author.handle,
-          },
-          author: {
-            did: parsedPostInfo.original.authorDid,
-            handle: parsedPostInfo.original.authorHandle,
-          },
-          reposter: parsedPostInfo.reposter
-            ? {
-                did: parsedPostInfo.reposter.did,
-                handle: parsedPostInfo.reposter.handle,
-              }
-            : undefined,
-        };
-
-        const blockAnalysis =
-          await this.blockChecker.analyzeAllBlockRelationships(actors);
-
-        // Step 5: Generate and send response
-        const replyText =
-          this.blockChecker.generateComprehensiveReplyText(blockAnalysis);
+        // Step 4: Simple analysis - only check if user blocks original author
+        const replyText = await this.blockChecker.analyzeSimpleBlocking(
+          notification.author.did,
+          notification.author.handle,
+          parsedPostInfo.original.authorDid,
+          parsedPostInfo.original.authorHandle,
+          parsedPostInfo.reposter?.handle
+        );
 
         console.log(`Sending reply: ${replyText}`);
 
@@ -111,7 +95,7 @@ export class WhoblockwhoBot {
         console.log("Could not identify original post - sending help message");
 
         // Send a helpful response when we can't identify the original post
-        const helpText = `🚫 I couldn't find a hidden post to analyze. Please mention me in a reply to a repost that shows "[Post unavailable]" and I'll tell you who blocked whom!`;
+        const helpText = `I couldn't find a post to analyze. Please mention me in a reply to a repost or quote post with blocked content.`;
 
         const success = await this.responseSender.sendReply(
           notification.uri,
