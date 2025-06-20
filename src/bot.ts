@@ -74,7 +74,8 @@ export class WhoblockwhoBot {
           notification.author.handle,
           parsedPostInfo.original.authorDid,
           parsedPostInfo.original.authorHandle,
-          parsedPostInfo.reposter?.handle
+          parsedPostInfo.reposter?.handle,
+          parsedPostInfo.isReply || false
         );
 
         console.log(`Sending reply: ${replyText}`);

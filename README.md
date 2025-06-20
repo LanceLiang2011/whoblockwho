@@ -2,27 +2,41 @@
 
 ## How to Use
 
-The bot works for both **reposts** and **quote posts** with blocked content:
+The bot works for **reposts**, **quote posts**, and **replies** with blocked content:
 
 ### Scenario 1: Blocked Reposts
 
 1. **Find a Blocked Repost**: Look for reposts that show "[Post unavailable]" in your Bluesky feed
 2. **Mention the Bot**: Reply to that repost and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot identifies who blocked whom in the repost relationship
+3. **Get the Answer**: The bot tells you who the original author is, who reposted it, and whether you block the original author
 
 ### Scenario 2: Blocked Quote Posts
 
 1. **Find a Quote Post with Blocked Content**: Look for quote posts where the quoted content shows as blocked/unavailable
 2. **Mention the Bot**: Reply to that quote post and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot identifies who blocked whom in the quote relationship
+3. **Get the Answer**: The bot tells you who the original author is and whether you block them
+
+### Scenario 3: Replies to Blocked Posts
+
+1. **Find a Reply to Blocked Content**: Look for replies where you can see the reply but the original post is blocked/hidden
+2. **Mention the Bot**: Reply to that person's reply and mention `@whoblockthis.bsky.social`
+3. **Get the Answer**: The bot tells you who the original author is, who replied to it, and whether you block the original author
 
 ### Response Examples
 
-The bot will analyze the blocking relationship and reply with messages like:
+The bot will provide clear information about the post relationships:
 
-- `🛈 The repost by @alice shows "[Post unavailable]" **because @bob has blocked @alice**. The original post by @bob is hidden from the reposter.`
-- `🛈 The original post by @alice is hidden **because @alice has blocked you**.`
-- `🛈 The original post by @alice is hidden **because you have blocked @alice**.`bot that identifies who blocked whom when posts are hidden. When users see "[Post unavailable]" due to blocking, they can mention the bot to find out the blocking relationship.
+**Repost scenario:**
+- `The original post is by @alice and reposted by @bob. You have blocked @alice.`
+- `The original post is by @alice and reposted by @bob.`
+
+**Reply scenario:**
+- `The original post is by @alice and @bob replied to it. You have blocked @alice.`
+- `The original post is by @alice and @bob replied to it.`
+
+**Quote post scenario:**
+- `The original post is by @alice. You have blocked @alice.`
+- `The original post is by @alice.`
 
 ## Features
 

@@ -12,7 +12,8 @@ export class BlockRelationshipChecker {
     userHandle: string,
     originalAuthorDid: string,
     originalAuthorHandle: string,
-    reposterHandle?: string
+    reposterHandle?: string,
+    isReply: boolean = false
   ): Promise<string> {
     try {
       console.log(`Checking if @${userHandle} blocks @${originalAuthorHandle}`);
@@ -25,12 +26,17 @@ export class BlockRelationshipChecker {
 
       console.log(`User blocks original author: ${userBlocksOriginal}`);
 
-      // Generate simple response
+      // Generate appropriate response based on scenario
       if (reposterHandle) {
         const blockText = userBlocksOriginal
           ? ` You have blocked @${originalAuthorHandle}.`
           : "";
-        return `The original post is by @${originalAuthorHandle} and reposted by @${reposterHandle}.${blockText}`;
+        
+        if (isReply) {
+          return `The original post is by @${originalAuthorHandle} and @${reposterHandle} replied to it.${blockText}`;
+        } else {
+          return `The original post is by @${originalAuthorHandle} and reposted by @${reposterHandle}.${blockText}`;
+        }
       } else {
         const blockText = userBlocksOriginal
           ? ` You have blocked @${originalAuthorHandle}.`

@@ -48,6 +48,7 @@ export interface ParsedPostInfo {
     handle: string;
     did: string;
   };
+  isReply?: boolean;
 }
 
 export interface BlockRelationship {
