@@ -1,12 +1,28 @@
 {
   "name": "whoblockwho",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "bluesky",
+    "bot",
+    "atproto",
+    "blocking"
+  ],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "A Bluesky bot that identifies who blocked whom when posts are hidden",
+  "dependencies": {
+    "@atproto/api": "^0.15.16",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
 }
