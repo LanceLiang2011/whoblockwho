@@ -71,6 +71,7 @@ export class WhoblockwhoBot {
         // Step 4: Generate post information
         const replyText = await this.postInfoGenerator.generatePostInfo(
           parsedPostInfo.original.authorHandle,
+          parsedPostInfo.original.uri,
           parsedPostInfo.reposter?.handle,
           parsedPostInfo.isReply || false
         );

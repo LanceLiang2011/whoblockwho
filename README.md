@@ -8,38 +8,35 @@ The bot works for **reposts**, **quote posts**, and **replies** with blocked con
 
 1. **Find a Blocked Repost**: Look for reposts that show "[Post unavailable]" in your Bluesky feed
 2. **Mention the Bot**: Reply to that repost and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot tells you who the original author is, who reposted it, and whether you block the original author
+3. **Get the Answer**: The bot will identify the original author and provide a clickable link to the original post
 
 ### Scenario 2: Blocked Quote Posts
 
 1. **Find a Quote Post with Blocked Content**: Look for quote posts where the quoted content shows as blocked/unavailable
 2. **Mention the Bot**: Reply to that quote post and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot tells you who the original author is and whether you block them
+3. **Get the Answer**: The bot will identify the original author and provide a clickable link to the original post
 
 ### Scenario 3: Replies to Blocked Posts
 
 1. **Find a Reply to Blocked Content**: Look for replies where you can see the reply but the original post is blocked/hidden
 2. **Mention the Bot**: Reply to that person's reply and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot tells you who the original author is, who replied to it, and whether you block the original author
+3. **Get the Answer**: The bot will identify the original author and provide a clickable link to the original post
 
 ### Response Examples
 
-The bot will provide clear information about the post relationships:
+The bot will provide clear information about the post relationships with clickable links:
 
 **Repost scenario:**
 
-- `The original post is by @alice and reposted by @bob. You have blocked @alice.`
-- `The original post is by @alice and reposted by @bob.`
+- `The original post is by @alice and reposted by @bob. Original post: https://bsky.app/profile/did:plc:.../post/...`
 
 **Reply scenario:**
 
-- `The original post is by @alice and @bob replied to it. You have blocked @alice.`
-- `The original post is by @alice and @bob replied to it.`
+- `The original post is by @alice and @bob replied to it. Original post: https://bsky.app/profile/did:plc:.../post/...`
 
 **Quote post scenario:**
 
-- `The original post is by @alice. You have blocked @alice.`
-- `The original post is by @alice.`
+- `The original post is by @alice. Link: https://bsky.app/profile/did:plc:.../post/...`
 
 ## Features
 
@@ -90,17 +87,14 @@ Once the bot is running, here's how to use it:
 
 1. **Find a Hidden Post**: Look for reposts that show "[Post unavailable]" in your Bluesky feed
 2. **Mention the Bot**: Reply to that repost and mention `@whoblockthis.bsky.social`
-3. **Get the Answer**: The bot will analyze the blocking relationship and reply with one of:
-   - `� The original post by @alice is hidden **because @alice has blocked you**.`
-   - `� The original post by @alice is hidden **because you have blocked @alice**.`
-   - `� The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
+3. **Get the Answer**: The bot will identify the original author and provide a clickable link to access the original post
 
 ### Example
 
 ```text
 User sees: "John reposted [Post unavailable]"
-User replies: "@whoblockthis.bsky.social why can't I see this?"
-Bot replies: "� The original post by @alice is hidden because @alice has blocked you."
+User replies: "@whoblockthis.bsky.social what's the original post?"
+Bot replies: "The original post is by @alice and reposted by @john. Original post: https://bsky.app/profile/did:plc:abc123/post/xyz789"
 ```
 
 ## Project Structure
@@ -110,7 +104,7 @@ src/
 ├── auth/           # Authentication module (Step 1)
 ├── notifications/  # Mention monitoring (Step 2)
 ├── post-parser/    # Original post identification (Step 3)
-├── block-checker/  # Block relationship analysis (Step 4)
+├── post-info/      # Post information generation (Step 4)
 ├── response/       # Reply generation and sending (Step 5)
 ├── types/          # TypeScript type definitions
 ├── config/         # Configuration management
@@ -123,16 +117,16 @@ src/
 ✅ **Step 1: Authentication** - Bot can log in to Bluesky using AT Protocol
 ✅ **Step 2: Mention Monitoring** - Continuously monitors for bot mentions
 ✅ **Step 3: Post Parsing** - Identifies original posts from reposts and replies
-✅ **Step 4: Block Relationship Checking** - Uses Bluesky's public block graph API
-✅ **Step 5: Response Generation** - Sends informative replies about block relationships
+✅ **Step 4: Post Information Generation** - Generates responses with clickable links to original posts
+✅ **Step 5: Response Generation** - Sends informative replies with rich text formatting
 
 ## How It Works
 
 1. **Authentication**: The bot logs in using your Bluesky handle and app password
 2. **Monitoring**: Polls Bluesky's notification feed every 30 seconds for mentions
 3. **Parsing**: When mentioned, analyzes the reply chain to find the original hidden post
-4. **Block Analysis**: Uses Bluesky's public block graph API to check relationships
-5. **Response**: Sends an informative reply explaining who blocked whom
+4. **Information Generation**: Creates responses with clickable mentions and links to original posts
+5. **Response**: Sends informative replies with rich text formatting
 
 ## Development
 
@@ -148,16 +142,17 @@ The current implementation covers all steps of the bot development:
 - ✅ Bluesky authentication
 - ✅ Mention monitoring
 - ✅ Original post identification
-- ✅ Block relationship detection using public graph API
-- ✅ Intelligent response generation with fallback cases
+- ✅ Rich text response generation with clickable links and mentions
 
 ## Bot Response Examples
 
 The bot will respond with messages like:
 
-- `� The original post by @alice is hidden **because @alice has blocked you**.`
-- `� The original post by @alice is hidden **because you have blocked @alice**.`
-- `� The original post by @alice is unavailable, but no direct block between you and @alice was found. It may have been deleted or hidden by a moderation list.`
+- `The original post is by @alice and reposted by @bob. Original post: https://bsky.app/profile/did:plc:.../post/...`
+- `The original post is by @alice and @bob replied to it. Original post: https://bsky.app/profile/did:plc:.../post/...`
+- `The original post is by @alice. Link: https://bsky.app/profile/did:plc:.../post/...`
+
+All @mentions will be clickable (blue highlighted) and links will be clickable as well.
 
 ## Environment Variables
 
