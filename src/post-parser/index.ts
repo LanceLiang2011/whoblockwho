@@ -282,13 +282,13 @@ export class PostParser {
         `💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`
       );
 
-      // Try root first (original post in thread)
-      if (rootUri) {
-        console.log(`💬 Getting original author from root: ${rootUri}`);
-        const originalAuthor = await this.extractAuthorFromUri(rootUri);
+      // Try parent first (immediate post being replied to) - this is what we want
+      if (parentUri) {
+        console.log(`💬 Getting original author from parent: ${parentUri}`);
+        const originalAuthor = await this.extractAuthorFromUri(parentUri);
         if (originalAuthor) {
           console.log(
-            `✅ Found original author from root: @${originalAuthor.authorHandle}`
+            `✅ Found original author from parent: @${originalAuthor.authorHandle}`
           );
           return {
             original: originalAuthor,
@@ -301,13 +301,13 @@ export class PostParser {
         }
       }
 
-      // Try parent if different from root
-      if (parentUri && parentUri !== rootUri) {
-        console.log(`� Getting original author from parent: ${parentUri}`);
-        const originalAuthor = await this.extractAuthorFromUri(parentUri);
+      // Only try root if parent fails and they're different
+      if (rootUri && rootUri !== parentUri) {
+        console.log(`💬 Getting original author from root: ${rootUri}`);
+        const originalAuthor = await this.extractAuthorFromUri(rootUri);
         if (originalAuthor) {
           console.log(
-            `✅ Found original author from parent: @${originalAuthor.authorHandle}`
+            `✅ Found original author from root: @${originalAuthor.authorHandle}`
           );
           return {
             original: originalAuthor,
@@ -507,28 +507,7 @@ export class PostParser {
           `💬 Reply structure - root: ${rootUri}, parent: ${parentUri}`
         );
 
-        // Try to get the root post (original post in thread)
-        if (rootUri && rootUri !== parentUri) {
-          console.log(`🔍 Checking root post for blocking: ${rootUri}`);
-          const blockedRootAuthor = await this.checkIfPostIsBlocked(rootUri);
-          if (blockedRootAuthor) {
-            console.log(
-              `✅ FOUND BLOCKED ROOT AUTHOR: @${blockedRootAuthor.authorHandle}`
-            );
-            return {
-              original: blockedRootAuthor,
-              reposter: {
-                handle: post.author.handle, // B (the replier)
-                did: post.author.did,
-              },
-              isReply: true,
-            };
-          } else {
-            console.log(`❌ Root post is not blocked or not found`);
-          }
-        }
-
-        // Try to get the immediate parent post
+        // Try to get the immediate parent post first (the post being replied to)
         if (parentUri && parentUri !== postUri) {
           console.log(`🔍 Checking parent post for blocking: ${parentUri}`);
           const blockedParentAuthor = await this.checkIfPostIsBlocked(
@@ -548,6 +527,27 @@ export class PostParser {
             };
           } else {
             console.log(`❌ Parent post is not blocked or not found`);
+          }
+        }
+
+        // Only try root if parent fails and they're different
+        if (rootUri && rootUri !== parentUri) {
+          console.log(`🔍 Checking root post for blocking: ${rootUri}`);
+          const blockedRootAuthor = await this.checkIfPostIsBlocked(rootUri);
+          if (blockedRootAuthor) {
+            console.log(
+              `✅ FOUND BLOCKED ROOT AUTHOR: @${blockedRootAuthor.authorHandle}`
+            );
+            return {
+              original: blockedRootAuthor,
+              reposter: {
+                handle: post.author.handle, // B (the replier)
+                did: post.author.did,
+              },
+              isReply: true,
+            };
+          } else {
+            console.log(`❌ Root post is not blocked or not found`);
           }
         }
       } else {
